@@ -21,6 +21,7 @@ class funcs():
         self.entrada_descricao.delete(0,END)
         self.entrada_fornecedor.delete(0,END)
         self.entrada_excluir_tela.delete(0, END)
+        self.entrada_valor.delete(0,END)
     def limpa_tela_fornecedor(self):
         self.entrada_nome_fornecedor.delete(0,END)
         self.entrada_telefone_fornecedor.delete(0,END)
@@ -29,17 +30,16 @@ class funcs():
         self.mostra_id.delete(0,END)
         self.entrada_edita_nome.delete(0,END)
         self.entrada_edita_telefone.delete(0,END)
+    def limpa_tela_observacao(self):
+        self.entrada_observacao.delete(0,END)
 
 
 # BANCO DE DADOS
 #funçao que conecta ao banco de dados
     def conecta_BD(self):
-        conn = pyodbc.connect(DRIVER="SQL Server",
-                              Server='CLEVERSON\DB_CENTRAL',
-                              database='central_teste')
-        # (DRIVER="SQL Server",
-        #  Server='SERVIDOR\SQLEXPRESS',
-        #  database='central_tec')
+        conn = pyodbc.connect(DRIVER="SQL Server",host='CLEVERSON\DB_CENTRAL',database='central_teste')
+
+        #conn = pyodbc.connect(DRIVER="SQL Server",host='192.168.3.10\\SQLEXPRESS',database='central_tec',User = 'appcentraltec',Password = 'central')
 
         self.cursor = conn.cursor()
 #função que desconecta o banco de dados
@@ -62,9 +62,24 @@ class funcs():
         for (id, nome, telefone,id_smart,situacao,orcamento) in resultado_busca:
             self.tabela.insert("", "end", values=(id, nome, telefone,id_smart,situacao,orcamento))
         self.desconecta_bd()
+
+    def busca_modelo(self):
+        self.conecta_BD()
+        self.tabela.delete(*self.tabela.get_children())
+        self.entrada_nome_i.insert(END, "%")
+        nome = self.entrada_nome_i.get()
+        self.cursor.execute("""SELECT id_cliente,NOME,modelo,id_smart,situacao,orcamento,observacao FROM clientes 
+               INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
+               WHERE modelo LIKE '%s' ORDER BY NOME ASC""" % nome)
+        resultado_busca = self.cursor.fetchall()
+
+        for (id, nome, telefone, id_smart, situacao, orcamento,observacao) in resultado_busca:
+            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,observacao))
+        self.desconecta_bd()
+
+
 # adiciona o cliente
     def adicione_cliente(self):
-
         self.nome = self.entrada_nome.get()
         self.telefone = self.entrada_telefone.get()
         try:
@@ -95,20 +110,20 @@ class funcs():
     #botao salvar
         self.bot_salvar = atk.Button3d(self.frame_editar, bg="#1EAAF1", text="SALVAR",
                                        command=self.edita_cliente)
-        self.bot_salvar.place(relx=0.75, rely=0.01, relwidth=0.20, relheight=0.35)
+        self.bot_salvar.place(relx=0.55, rely=0.0, relwidth=0.20, relheight=0.35)
     # botao excluir
         self.bot_excluir = atk.Button3d(self.frame_editar, text="Excluir Cliente",
                                         command=self.delete_cliente)
-        self.bot_excluir.place(relx=0.15, rely=0.62, relwidth=0.20, relheight=0.35)
+        self.bot_excluir.place(relx=0.15, rely=0.55, relwidth=0.20, relheight=0.35)
     # entry mostra id
         self.mostra_id= Entry(self.frame_editar)
-        self.mostra_id.place(relx=0.01, rely=0.01, relwidth=0.10, relheight=0.2)
+        self.mostra_id.place(relx=0.01, rely=0.07, relwidth=0.08, relheight=0.2)
     #entry edita nome
         self.entrada_edita_nome = Entry(self.frame_editar)
-        self.entrada_edita_nome.place(relx=0.15, rely=0.01, relwidth=0.20 ,relheight=0.2)
+        self.entrada_edita_nome.place(relx=0.1, rely=0.07, relwidth=0.20 ,relheight=0.2)
     #entry edita telefone
         self.entrada_edita_telefone = Entry(self.frame_editar)
-        self.entrada_edita_telefone.place(relx=0.4, rely=0.01, relwidth=0.2, relheight=0.2)
+        self.entrada_edita_telefone.place(relx=0.31, rely=0.07, relwidth=0.2, relheight=0.2)
     # entri delete
         self.entrada_idcli_delete = Entry(self.frame_editar)
         self.entrada_idcli_delete.place(relx=0.01, rely=0.65, relwidth=0.1, relheight=0.20)
@@ -148,6 +163,7 @@ class funcs():
                                                    nome = ? 
                                                    WHERE id_cliente = """ + self.id_cliente,(self.nome_editado))
         self.cursor.commit()
+
         self.desconecta_bd()
 
         self.select_tela_consultar_clientes()
@@ -197,71 +213,104 @@ class funcs():
     def select(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento FROM clientes 
+        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
           INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
           order by id_cliente; """)
 
-        for (id, nome, telefone, id_smart,situacao,orcamento) in dados:
-            self.tabela.insert("", "end", values=(id, nome, telefone,id_smart, situacao,orcamento))
+        for (id, nome, telefone, id_smart,situacao,orcamento,observacao) in dados:
+            self.tabela.insert("", "end", values=(id, nome, telefone,id_smart, situacao,orcamento,observacao))
 
         self.desconecta_bd()
     def select_prontos(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento FROM clientes 
+        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
                   INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                   where situacao = 'Pronto'
                   order by id_cliente; """)
 
-        for (id, nome, telefone, id_smart, situacao, orcamento) in dados:
-            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento))
+        for (id, nome, telefone, id_smart, situacao, orcamento,observacao) in dados:
+            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,observacao))
         self.desconecta_bd()
     def select_orcamento(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento FROM clientes 
+        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
                           INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                           where situacao = 'Fazer Orçamento'
                           order by id_cliente; """)
 
-        for (id, nome, telefone, id_smart, situacao, orcamento) in dados:
-            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento))
+        for (id, nome, telefone, id_smart, situacao, orcamento,observacao) in dados:
+            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,observacao))
         self.desconecta_bd()
-    def select_entregues(self):
+    def select_pedidos(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento FROM clientes 
+        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
                                   INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
-                                  where situacao = 'Entregue'
+                                  where pedido = '1'
                                   order by id_cliente; """)
 
-        for (id, nome, telefone, id_smart, situacao, orcamento) in dados:
-            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento))
+        for (id, nome, telefone, id_smart, situacao, orcamento,observacao) in dados:
+            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,observacao))
         self.desconecta_bd()
+    def select_arrumar(self):
+        self.tabela.delete(*self.tabela.get_children())
+        self.conecta_BD()
+        dados = self.cursor.execute(""" SELECT id_cliente,NOME,modelo,id_smart,situacao,orcamento,observacao FROM clientes 
+                                          INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
+                                          where situacao = 'Orçamento feito' OR situacao = 'Pedido feito'
+                                          order by id_cliente; """)
+
+        for (id, nome, modelo, id_smart, situacao, orcamento,observacao) in dados:
+            self.tabela.insert("", "end", values=(id, nome, modelo, id_smart, situacao, orcamento,observacao))
+        self.desconecta_bd()
+
 #select tela aparelhos
     def select_aparelhos(self):
         # select da tabela
         self.tabela_aparelhos.delete(*self.tabela_aparelhos.get_children())
         self.conecta_BD()
-        lista = self.cursor.execute("""SELECT NOME,telefone,Marca,modelo,id_smart,orcamento,descricao,situacao AS Status FROM clientes 
+        lista = self.cursor.execute("""SELECT NOME,telefone,Marca,modelo,id_smart,orcamento,descricao,situacao,observacao AS Status FROM clientes 
                INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                ORDER BY nome ASC;""")
 
-        for (id, cod, marca, modelo, orcamento, data, descricao, status) in lista:
-            self.tabela_aparelhos.insert("", "end", values=(id, cod, marca, modelo, orcamento, data, descricao, status))
+        for (id, cod, marca, modelo, orcamento, data, descricao, status,observacao) in lista:
+            self.tabela_aparelhos.insert("", "end", values=(id, cod, marca, modelo, orcamento, data, descricao, status,observacao))
+
+        self.desconecta_bd()
 #select informaçoes
     def select_informaçoes(self):
         # pega o id digitado na tela inicial e faz o select
         self.id = self.entrada_id_smartphone.get()
         self.conecta_BD()
-        lista = self.cursor.execute("""SELECT id_cliente,NOME,telefone,Marca,modelo,id_smart,
-                                            problema,orcamento,orcamento_sem,descricao,situacao,convert(char,data_entrada,13),convert(char,data_sai,13)
+#tabela 1
+        lista = self.cursor.execute("""SELECT id_cliente,NOME,telefone,Marca,modelo,id_smart
                                             AS Status FROM clientes 
                                             INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                                             WHERE id_smart = """ + self.id)
-        for (id_cli,nome, cod, marca, modelo, problema, orcamento, orcamento_sem, data, descricao, status,data_entrada,data_saida) in lista:
+        for (id_cli,nome, cod, marca, modelo,id) in lista:
             self.tabela_aparelhos.insert("", "end", values=(
-            id_cli,nome, cod, marca, modelo, problema, orcamento, orcamento_sem, data, descricao, status,data_entrada,data_saida))
+            id_cli,nome, cod, marca, modelo,id))
+#tabela 2
+        lista2 = self.cursor.execute("""SELECT  problema,orcamento,orcamento_sem,situacao,descricao,observacao
+                                                    AS Status FROM clientes 
+                                                    INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
+                                                    WHERE id_smart = """ + self.id)
+
+        for ( problema, orcamento, orcamento_sem,situacao, descricao,obs) in lista2:
+            self.tabela_aparelhos2.insert("", "end", values=(
+                problema, orcamento, orcamento_sem,situacao, descricao,obs))
+#tabela3
+        lista3 = self.cursor.execute("""SELECT convert(char,data_entrada,3),convert(char,data_sai,3)
+                                                    AS Status FROM clientes 
+                                                    INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
+                                                    WHERE id_smart = """ + self.id)
+        for ( data_entrada,data_saida) in lista3:
+            self.tabela_aparelhos3.insert("", "end", values=(
+               data_entrada,data_saida))
+
+
         self.desconecta_bd()
 #select da tela clientes
     def select_tela_consultar_clientes(self):
@@ -272,6 +321,7 @@ class funcs():
         ORDER BY nome ASC; """)
         for (id, nome, telefone, data) in lista:
             self.tabela_bd.insert("", "end", values=(id, nome, telefone, data))
+        self.desconecta_bd()
 # preenche o id do cliente para adicionar aparelho
     def preenche(self):
         self.conecta_BD()
@@ -318,6 +368,7 @@ class funcs():
         self.desconecta_bd()
         self.select_aparelhos()
         messagebox.showinfo(title='Aviso', message='Aparelho removido \n do banco de dados')
+        self.entrada_id_delete.delete(0,END)
 
 
 
@@ -356,24 +407,106 @@ class funcs():
         if self.escolha_p == 4:
             self.problema = 'Desbloqueio'
 
-        elif self.escolha_p == 0 :
-              self.problema = 'Outros'
-# funçao que muda o status do aparelho para pronto
-    def situacao (self):
-        self.id_smart = self.entrada_id_smartphone.get()
-        self.situacao = self.status.get()
-        self.conecta_BD()
-        if self.situacao == 1:
-            self.cursor.execute(""" UPDATE smartphone SET data_mudanca_status = GETDATE(), situacao = 'Pronto'
-                WHERE id_smart = """ + self.id_smart)
-        elif self.situacao == 2:
-            self.cursor.execute(""" UPDATE smartphone SET data_mudanca_status = GETDATE(), situacao = 'Orçamento feito'
-                       WHERE id_smart = """ + self.id_smart)
+        if self.escolha_p == 5:
+            self.problema = 'Botões'
 
+        if self.escolha_p == 6:
+            self.problema = 'Outros'
+
+        elif self.escolha_p == 0 :
+              self.problema = 'Não Definido'
+
+    def chek_muda_status(self):
+        self.muda_status =  self.status.get()
+        if self.muda_status == 1:
+            self.pronto()
+        if self.muda_status == 2:
+            self.dar_baixa()
+        if self.muda_status == 3:
+            self.tela_observacoes()
+        if self.muda_status == 4:
+            self.pedido_feito()
+        if self.muda_status == 5:
+            self.fazer_pedido()
+        else :
+            print(self.muda_status)
+
+    def chek_fazer_pedido(self):
+        self.pedido = self.pedir.get()
+        if self.pedido == 1:
+            self.pedir = '1'
+            self.orcament = self.entrada_cgarantia.get()
+            self.orcamento_sem = self.entrada_sgarantia.get()
+            self.conecta_BD()
+            self.id = self.entrada_id_smartphone.get()
+            self.cursor.execute("""UPDATE smartphone SET orcamento = """ + self.orcament +
+                                    """,orcamento_sem = """ + self.orcamento_sem +
+                                    """,pedido = """ + self.pedir +
+                                    """,situacao = 'Fazer pedido'"""
+                                    """ WHERE id_smart = """ + self.id)
+            self.cursor.commit()
+            self.desconecta_bd()
+            self.passar_orcamento()
+            self.select()
+        elif self.pedido == 0 :
+            self.pedir = '0'
+            self.orcament = self.entrada_cgarantia.get()
+            self.orcamento_sem = self.entrada_sgarantia.get()
+            self.conecta_BD()
+            self.id = self.entrada_id_smartphone.get()
+            self.cursor.execute("""UPDATE smartphone SET orcamento = """ + self.orcament +
+                                """,orcamento_sem = """ + self.orcamento_sem +
+                                """,pedido = """ + self.pedir +
+                                """,situacao = 'Orçamento feito'"""
+                                """ WHERE id_smart = """ + self.id)
+            self.cursor.commit()
+            self.desconecta_bd()
+            self.passar_orcamento()
+            self.select()
+
+    def fazer_pedido(self):
+        self.id = self.entrada_id_smartphone.get()
+        self.conecta_BD()
+        self.cursor.execute("""UPDATE smartphone SET pedido = '1', situacao = 'Fazer pedido'
+                                       WHERE id_smart =""" + self.id)
         self.cursor.commit()
         self.desconecta_bd()
         self.limpa_tela_inicial()
 
+    def pedido_feito(self):
+
+        self.id = self.entrada_id_smartphone.get()
+        self.conecta_BD()
+        self.cursor.execute("""UPDATE smartphone SET pedido = '0', situacao = 'Pedido feito'
+                                WHERE id_smart =""" + self.id)
+        self.cursor.commit()
+        self.desconecta_bd()
+        self.limpa_tela_inicial()
+
+
+
+    def add_observacao(self):
+
+        self.id_smart = self.entrada_id_smartphone.get()
+        self.observacao = self.entrada_observacao.get()
+        self.conecta_BD()
+        self.cursor.execute(""" UPDATE dbo.smartphone SET  observacao = ?
+                                                     WHERE id_smart = """ + self.id_smart,(self.observacao))
+        self.cursor.commit()
+        self.desconecta_bd()
+        self.limpa_tela_observacao()
+
+# funçao que muda o status do aparelho para pronto
+    def pronto (self):
+        self.id_smart = self.entrada_id_smartphone.get()
+        self.situacao = self.status.get()
+        self.conecta_BD()
+
+        self.cursor.execute(""" UPDATE smartphone SET data_mudanca_status = GETDATE(), situacao = 'Pronto'
+                WHERE id_smart = """ + self.id_smart)
+        self.cursor.commit()
+        self.desconecta_bd()
+        self.limpa_tela_inicial()
 
 # orçamento
 #funçao que atualiza o orçamento
@@ -397,23 +530,6 @@ class funcs():
         self.valorsem = self.valorcom - self.valors
         self.entrada_cgarantia.insert(END,self.valorcom)
         self.entrada_sgarantia.insert(END,self.valorsem)
-# atualiza o orçamento
-    def up_orcamento (self):
-        self.conecta_BD()
-        self.orcament = self.entrada_cgarantia.get()
-        self.orcamento_sem = self.entrada_sgarantia.get()
-        self.id = self.entrada_id_smartphone.get()
-        self.cursor.execute("""UPDATE smartphone SET orcamento = """ + self.orcament +
-                                            """,orcamento_sem = """ + self.orcamento_sem +
-                                            """,situacao = 'Orçamento feito'"""
-                                            """ WHERE id_smart = """ + self.id)
-        self.cursor.commit()
-        self.desconecta_bd()
-        self.passar_orcamento()
-        self.select()
-
-
-
 
 # FUNÇOES DA TELA 'TELAS'
 #mostra os botoes para adicionar fornecedor
@@ -423,17 +539,14 @@ class funcs():
                                            bg="#006675")
         self.bot_adicionar.place(relx=0.82, rely=0.5, relwidth=0.15, relheight=0.15)
 
-        self.bot_editar_fornecedor = atk.Button3d(self.frame_telas3, text="Editar Fornecedor", command=self.preeche_edita_fornecedor,
+        self.bot_editar_fornecedor = atk.Button3d(self.frame_telas, text="Editar Fornecedor", command=self.preeche_edita_fornecedor,
                                           bg="#006675")
-        self.bot_editar_fornecedor.place(relx=0.61, rely=0.10, relwidth=0.15, relheight=0.80)
+        self.bot_editar_fornecedor.place(relx=0.63, rely=0.70, relwidth=0.15, relheight=0.15)
 
-        self.bot_excluir = atk.Button3d(self.frame_telas3, text="excluir", command=self.exclui_fornecedor,
+        self.bot_excluir = atk.Button3d(self.frame_telas, text="excluir", command=self.exclui_fornecedor,
                                           bg="#006675")
-        self.bot_excluir.place(relx=0.88, rely=0.10, relwidth=0.10, relheight=0.80)
-        # botao outros
-        self.bot_cancela = atk.Button3d(self.frame_telas, text="Cancelar", bg="#336666",
-                                             command=self.select_tabela_telas)
-        self.bot_cancela.place(relx=0.90, rely=0.88, relwidth=0.1, relheight=0.13)
+        self.bot_excluir.place(relx=0.9, rely=0.70, relwidth=0.10, relheight=0.15)
+
 
         #entrys
         self.entrada_nome_fornecedor = Entry(self.frame_telas)
@@ -442,8 +555,8 @@ class funcs():
         self.entrada_telefone_fornecedor = Entry(self.frame_telas)
         self.entrada_telefone_fornecedor.place(relx=0.79, rely=0.40, relwidth=0.2, relheight=0.10)
 
-        self.fornecedor = Entry(self.frame_telas3)
-        self.fornecedor.place(relx=0.77, rely=0.20, relwidth=0.1, relheight=0.50)
+        self.fornecedor = Entry(self.frame_telas)
+        self.fornecedor.place(relx=0.79, rely=0.72, relwidth=0.1, relheight=0.10)
 
         #labels
         self.nome = Label(self.frame_telas, text="Nome", fg="black", bg="#006675",
@@ -477,6 +590,7 @@ class funcs():
                 ORDER BY nome ASC; """)
         for (id, nome, telefone,data) in lista:
             self.tabela_fornecedor.insert("", "end", values=(id, nome, telefone,data))
+        self.desconecta_bd()
 # adiciona o fornecedor no banco de dados
     def adiciona_fornecedor(self):
         self.nome = self.entrada_nome_fornecedor.get()
@@ -501,6 +615,7 @@ class funcs():
         telefone_fornecedor= self.cursor.fetchall()
         telefone_fornecedor = [list(rows)for rows in telefone_fornecedor]
         self.entrada_telefone_fornecedor.insert(END,telefone_fornecedor)
+        self.desconecta_bd()
 
         self.bot_ok = atk.Button3d(self.frame_telas, text="OK", command=self.edita_fornecedor,
                                           bg="#006675")
@@ -558,14 +673,16 @@ class funcs():
         self.modelo = self.entrada_modelo.get()
         self.descricao = self.entrada_descricao.get()
         self.fornecedor = self.entrada_fornecedor.get()
+        self.valor = self.entrada_valor.get()
 
         self.conecta_BD();
-        self.cursor.execute(""" INSERT INTO dbo.telas (marca, modelo, condicoes,descricao, data_registro,cod_fornecedor)
-                VALUES (?,?,?,?,getdate(),?)""", (self.marcas, self.modelo,self.condicoes,self.descricao,self.fornecedor))
+        self.cursor.execute(""" INSERT INTO dbo.telas (marca, modelo, condicoes,descricao, data_registro,cod_fornecedor,valor)
+                VALUES (?,?,?,?,getdate(),?,?)""", (self.marcas, self.modelo,self.condicoes,self.descricao,self.fornecedor,self.valor))
         self.cursor.commit()
         self.desconecta_bd()
 
-        self.select_tabela_telas()
+
+        self.select_todas_marcas()
         self.limpa_tela_telas()
 # exclui a tela
     def exclui_tela(self):
@@ -575,120 +692,79 @@ class funcs():
                                     WHERE id_tela =""" + self.id_delete)
         self.cursor.commit()
         self.desconecta_bd()
-        self.select_tabela_telas()
+        self.select_todas_marcas()
         self.limpa_tela()
 
         self.limpa_tela_telas()
-# faz o select da tabela telas
+#tabela telas
     def select_tabela_telas(self):
 
         self.tabela_telas = ttk.Treeview(self.frame_telas2, height=4,
-                                  columns=("coluna0", "coluna1", "coluna2", "coluna3", "coluna4","coluna5","coluna6"))
+                                  columns=("coluna0", "coluna1", "coluna2", "coluna3", "coluna4","coluna5","coluna6","coluna7"))
         self.tabela_telas.heading("#1", text="id")
         self.tabela_telas.heading("#2", text="Marca")
         self.tabela_telas.heading("#3", text="Modelo")
         self.tabela_telas.heading("#4", text="Condiçoes")
         self.tabela_telas.heading("#5", text="Fornecedor")
-        self.tabela_telas.heading("#6", text="Descrição")
+        self.tabela_telas.heading("#6", text="Valor")
+        self.tabela_telas.heading("#7", text="Descrição")
         self.tabela_telas.column("#0", width=00, minwidth=50, stretch=NO)
         self.tabela_telas.column("#1", width=60, minwidth=50, stretch=NO)
-        self.tabela_telas.column("#2", width=150, minwidth=50, stretch=NO)
-        self.tabela_telas.column("#3", width=200, minwidth=50, stretch=NO)
-        self.tabela_telas.column("#4", width=200, minwidth=50, stretch=NO)
+        self.tabela_telas.column("#2", width=100, minwidth=50, stretch=NO)
+        self.tabela_telas.column("#3", width=100, minwidth=50, stretch=NO)
+        self.tabela_telas.column("#4", width=100, minwidth=50, stretch=NO)
         self.tabela_telas.column("#5", width=200, minwidth=50, stretch=NO)
-        self.tabela_telas.column("#6", width=200, minwidth=50, stretch=NO)
+        self.tabela_telas.column("#6", width=100, minwidth=50, stretch=NO)
+        self.tabela_telas.column("#7", width=300, minwidth=50, stretch=NO)
         self.tabela_telas.place(relx=0.01, rely=0.04, relwidth=0.98, relheight=0.86)
 
+    def select_todas_marcas(self):
         # select da tabela
+        self.select_tabela_telas()
         self.tabela_telas.delete(*self.tabela_telas.get_children())
         self.conecta_BD()
-        lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,descricao   FROM telas
+        lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,valor, descricao  FROM telas
                 INNER JOIN fornecedor ON id_fornecedor = telas.cod_fornecedor
                 ORDER BY id_tela ASC; """)
 
-        for (id, marca, modelo, condicoes,nome,descricao) in lista:
-            self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes,nome,descricao))
+        for (id, marca, modelo, condicoes,nome,valor,descricao) in lista:
+            self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes,nome,valor,descricao))
         self.desconecta_bd()
-# select das telas samsung
+
+
+
+# select das telas
     def select_telas_samsung(self):
-        # select da tabela
-        self.tabela_telas.delete(*self.tabela_telas.get_children())
-        self.conecta_BD()
-        lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,descricao   FROM telas
-                INNER JOIN fornecedor ON id_fornecedor = telas.cod_fornecedor
-                WHERE marca = 'Samsung'
-                ORDER BY id_tela ASC; """)
-
-        for (id, marca, modelo, condicoes,nome,descricao) in lista:
-            self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes,nome,descricao))
-        self.desconecta_bd()
-# select das telas xiaomi
+        self.select_marca = 'Samsung'
+        self.select_marcas()
     def select_telas_xiaomi(self):
-        # select da tabela
-        self.tabela_telas.delete(*self.tabela_telas.get_children())
-        self.conecta_BD()
-        lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,descricao   FROM telas
-                      INNER JOIN fornecedor ON id_fornecedor = telas.cod_fornecedor
-                      WHERE marca = 'Xiaomi'
-                      ORDER BY id_tela ASC; """)
-
-        for (id, marca, modelo, condicoes, nome, descricao) in lista:
-            self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes, nome, descricao))
-        self.desconecta_bd()
-# select das telas motorola
+        self.select_marca = 'Xiaomi'
+        self.select_marcas()
     def select_telas_motorola(self):
-        # select da tabela
-        self.tabela_telas.delete(*self.tabela_telas.get_children())
-        self.conecta_BD()
-        lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,descricao   FROM telas
-                INNER JOIN fornecedor ON id_fornecedor = telas.cod_fornecedor
-                WHERE marca = 'Motorola'
-                ORDER BY id_tela ASC; """)
-
-        for (id, marca, modelo, condicoes,nome,descricao) in lista:
-            self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes,nome,descricao))
-        self.desconecta_bd()
-# select das telas iphone
+        self.select_marca = 'Motorola'
+        self.select_marcas()
     def select_telas_iphone(self):
-        # select da tabela
-        self.tabela_telas.delete(*self.tabela_telas.get_children())
-        self.conecta_BD()
-        lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,descricao   FROM telas
-                INNER JOIN fornecedor ON id_fornecedor = telas.cod_fornecedor
-                WHERE marca = 'Iphone'
-                ORDER BY id_tela ASC; """)
-
-        for (id, marca, modelo, condicoes,nome,descricao) in lista:
-            self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes,nome,descricao))
-        self.desconecta_bd()
-# select das telas lg
+        self.select_marca = 'Iphone'
+        self.select_marcas()
     def select_telas_lg(self):
-        # select da tabela
-        self.tabela_telas.delete(*self.tabela_telas.get_children())
-        self.conecta_BD()
-        lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,descricao   FROM telas
-                INNER JOIN fornecedor ON id_fornecedor = telas.cod_fornecedor
-                WHERE marca = 'LG'
-                ORDER BY id_tela ASC; """)
-
-        for (id, marca, modelo, condicoes,nome,descricao) in lista:
-            self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes,nome,descricao))
-        self.desconecta_bd()
-# select das telas Asus
+        self.select_marca = 'LG'
+        self.select_marcas()
     def select_telas_asus(self):
-        # select da tabela
-        self.tabela_telas.delete(*self.tabela_telas.get_children())
-        self.conecta_BD()
-        lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,descricao   FROM telas
-                INNER JOIN fornecedor ON id_fornecedor = telas.cod_fornecedor
-                WHERE marca = 'Asus'
-                ORDER BY id_tela ASC; """)
+        self.select_marca = 'Asus'
+        self.select_marcas()
 
-        for (id, marca, modelo, condicoes,nome,descricao) in lista:
-            self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes,nome,descricao))
-        self.desconecta_bd()
+    def select_marcas(self):
+            self.select_tabela_telas()
+            self.tabela_telas.delete(*self.tabela_telas.get_children())
+            self.conecta_BD()
+            lista = self.cursor.execute(""" SELECT id_tela, marca, modelo,condicoes,nome,valor,descricao   FROM telas
+                           INNER JOIN fornecedor ON id_fornecedor = telas.cod_fornecedor
+                           WHERE marca = ? """
+                                        """ORDER BY id_tela ASC """, (self.select_marca))
 
-
+            for (id, marca, modelo, condicoes, nome, valor, descricao) in lista:
+                self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes, nome, valor, descricao))
+            self.desconecta_bd()
 
 
 

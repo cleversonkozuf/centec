@@ -13,3 +13,6 @@ aplicacao()
 #cor verde escuro(#006666)
 #cor azul escuro(#003366)
 #site de cores (http://webcalc.com.br/Utilitarios/form/rgb_hex)
+
+#conxao  #conn = pyodbc.connect(DRIVER="SQL Server",host='192.168.3.10\\SQLEXPRESS',database='central_tec',User = 'appcentraltec',Password = 'central')
+#  pyinstaller --noconsole --name="CenTec" --icon="icon.ico" --add-data="icon.ico;." --onefile .\dbcentec.py .\modulos.py .\funçoes.py .\tela_nivel_1.py .\tela_nivel_2.py
