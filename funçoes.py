@@ -3,19 +3,23 @@ from modulos import *
 
 
 class funcs():
+
+
+
+
     def limpa_tela(self):
         self.entrada_nome.delete(0, END)
         self.entrada_telefone.delete(0,END)
         self.entrada_id_cliente.delete(0,END)
-        self.entrada_model.delete(0,END)
-        self.entrada_descricao.delete(0,END)
-
+        self.entrada_descricao_1.delete(0,END)
+        #self.entrada_model.delete(0, END)
 
 #limpa a busca da tela inicial e chama a funçao que faz o select depois da busca
     def limpa_tela_inicial(self):
         self.entrada_nome_i.delete(0, END)
         self.entrada_id_smartphone.delete(0, END)
-        self.select()
+        self.select_arrumar()
+
     def limpa_tela_telas(self):
         self.entrada_modelo.delete(0,END)
         self.entrada_descricao.delete(0,END)
@@ -32,20 +36,69 @@ class funcs():
         self.entrada_edita_telefone.delete(0,END)
     def limpa_tela_observacao(self):
         self.entrada_observacao.delete(0,END)
+    def limpa_tela_observacao_divida(self):
+        self.entrada_observacao_divida.delete(0,END)
+    def limpa_tela_ops(self):
+        self.entrada_valor_peca.delete(0,END)
+        self.entrada_cgarantia.delete(0,END)
+        self.entrada_sgarantia.delete(0,END)
 
 
-# BANCO DE DADOS
+    def duplo_tela_inicial(self,event):
+        self.entrada_id_smartphone.delete(0, END)
+        self.tabela.selection()
+
+        for i in self.tabela.selection():
+            col1,col2,col3,col4,col5,col6,col7,col8 = self.tabela.item(i ,'values')
+            self.entrada_id_smartphone.insert(END,col4)
+        self.tela_opcoes()
+
+    def duplo_telas(self,event):
+        self.entrada_excluir_tela.delete(0, END)
+        self.tabela_telas.selection()
+
+        for i in self.tabela_telas.selection():
+            col1,col2,col3,col4,col5,col6,col7 = self.tabela_telas.item(i,'values')
+            self.entrada_excluir_tela.insert(END,col1)
+
+    def duplo_tela_clientes(self,event):
+        self.id_edita = Entry(self.frame_editar)
+        self.tabela_bd.selection()
+
+
+        for i in self.tabela_bd.selection():
+
+            col1,col2,col3,col4 = self.tabela_bd.item(i,'values')
+
+            self.entrada_nome.delete(0,END)
+            self.entrada_nome.insert(END,col2)
+
+            self.entrada_id_cliente.delete(0,END)
+            self.entrada_id_cliente.insert(END,col1)
+            self.id_edita.delete(0,END)
+            self.id_edita.insert(END,col1)
+        self.limpa_tela_edita_clientes()
+        self.preenche_dados_editar()
+
+
+
+
+
+
+        # BANCO DE DADOS
 #funçao que conecta ao banco de dados
     def conecta_BD(self):
-        conn = pyodbc.connect(DRIVER="SQL Server",host='CLEVERSON\DB_CENTRAL',database='central_teste')
+        #conn = pyodbc.connect(DRIVER="SQL Server",host='CLEVERSON\DB_CENTRAL',database='central_teste')
+        #PARA SERVIDOR
+        conn = pyodbc.connect(DRIVER="SQL Server",host='SERVIDOR\SQLEXPRESS',database='central_tec')
+        #PARA COMPUTADORES NA REDE
+        #conn = pyodbc.connect(DRIVER="SQL Server",host='192.168.3.214\\SQLEXPRESS', database='central_tec',User = 'appcentraltec',Password = 'central')
 
-        #conn = pyodbc.connect(DRIVER="SQL Server",host='192.168.3.10\\SQLEXPRESS',database='central_tec',User = 'appcentraltec',Password = 'central')
 
         self.cursor = conn.cursor()
 #função que desconecta o banco de dados
     def desconecta_bd(self):
         self.cursor.close()
-
 
 # CLIENTES
 #função que faz a busca do nome na tela inicial
@@ -54,14 +107,39 @@ class funcs():
         self.tabela.delete(*self.tabela.get_children())
         self.entrada_nome_i.insert(END, "%")
         nome = self.entrada_nome_i.get()
-        self.cursor.execute("""SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento FROM clientes 
+        self.cursor.execute("""SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
         INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
         WHERE nome LIKE '%s' ORDER BY NOME ASC""" % nome)
         resultado_busca = self.cursor.fetchall()
 
-        for (id, nome, telefone,id_smart,situacao,orcamento) in resultado_busca:
-            self.tabela.insert("", "end", values=(id, nome, telefone,id_smart,situacao,orcamento))
+        for (id, nome, telefone,id_smart,situacao,orcamento,obs) in resultado_busca:
+            self.tabela.insert("", "end", values=(id, nome, telefone,id_smart,situacao,orcamento,obs))
+        self.cursor.commit()
         self.desconecta_bd()
+
+    def busca_clientes_add (self):
+        self.conecta_BD()
+        self.tabela.delete(*self.tabela.get_children())
+        self.entrada_nome.insert(END, "%")
+        nome = self.entrada_nome.get()
+
+        self.cursor.execute("""SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
+                                        INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
+                                        WHERE nome LIKE '%s' ORDER BY NOME DESC""" % nome)
+        resultado = self.cursor.fetchall()
+
+        for (id, nome, telefone, id_smart, situacao, orcamento,descricao, obs) in resultado:
+            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,descricao, obs))
+
+        self.desconecta_bd()
+        self.limpa_tela()
+        self.entrada_nome.insert(0, nome)
+        self.entrada_id_cliente.insert(0,id)
+
+
+
+
+
 
     def busca_modelo(self):
         self.conecta_BD()
@@ -75,6 +153,7 @@ class funcs():
 
         for (id, nome, telefone, id_smart, situacao, orcamento,observacao) in resultado_busca:
             self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,observacao))
+        self.cursor.commit()
         self.desconecta_bd()
 
 
@@ -96,7 +175,7 @@ class funcs():
         self.preenche()
 # deleta cliente
     def delete_cliente(self):
-        self.id_delete = self.entrada_idcli_delete.get()
+        self.id_delete = self.mostra_id.get()
         self.conecta_BD()
         self.cursor.execute("""DELETE clientes
                             WHERE id_cliente =""" + self.id_delete)
@@ -105,30 +184,11 @@ class funcs():
         messagebox.showinfo(title='Aviso', message='Cliente removido \n do banco de dados')
         self.select_tela_consultar_clientes()
         self.select()
+        self.limpa_tela_edita_clientes()
 # chama os botoes de editar
-    def botoes_editar_cliente(self):
-    #botao salvar
-        self.bot_salvar = atk.Button3d(self.frame_editar, bg="#1EAAF1", text="SALVAR",
-                                       command=self.edita_cliente)
-        self.bot_salvar.place(relx=0.55, rely=0.0, relwidth=0.20, relheight=0.35)
-    # botao excluir
-        self.bot_excluir = atk.Button3d(self.frame_editar, text="Excluir Cliente",
-                                        command=self.delete_cliente)
-        self.bot_excluir.place(relx=0.15, rely=0.55, relwidth=0.20, relheight=0.35)
-    # entry mostra id
-        self.mostra_id= Entry(self.frame_editar)
-        self.mostra_id.place(relx=0.01, rely=0.07, relwidth=0.08, relheight=0.2)
-    #entry edita nome
-        self.entrada_edita_nome = Entry(self.frame_editar)
-        self.entrada_edita_nome.place(relx=0.1, rely=0.07, relwidth=0.20 ,relheight=0.2)
-    #entry edita telefone
-        self.entrada_edita_telefone = Entry(self.frame_editar)
-        self.entrada_edita_telefone.place(relx=0.31, rely=0.07, relwidth=0.2, relheight=0.2)
-    # entri delete
-        self.entrada_idcli_delete = Entry(self.frame_editar)
-        self.entrada_idcli_delete.place(relx=0.01, rely=0.65, relwidth=0.1, relheight=0.20)
 
-        self.preenche_dados_editar()
+
+
 # preeenche os dados nos entry`s para editar os dados dos clientes
     def preenche_dados_editar(self):
         self.id_edita = self.id_edita.get()
@@ -151,7 +211,9 @@ class funcs():
         telefone = [list(rows) for rows in telefone]
         self.entrada_edita_telefone.insert(END, telefone)
 
+        self.cursor.commit()
         self.desconecta_bd()
+
     # edita cliente
     def edita_cliente(self):
         self.telefone_editado = self.entrada_edita_telefone.get()
@@ -174,25 +236,27 @@ class funcs():
     # ADICIONA SMARTPHONE
 # funçao que adiciona o smart
     def adiciona_smart(self):
+        self.chek_box_s()
+        self.chek_p()
         self.codigo = self.entrada_id_cliente.get()
-        self.modelo = self.entrada_model.get()
-        self.descricao = self.entrada_descricao.get()
+        self.modelo = self.modelos.get()
+        #self.descricao = self.entrada_descricao_1.get()
         self.id_smart = self.entrada_id_smartphone.get()
 
-
-
         self.conecta_BD()
-        print("conectando")
-        # self.monta_tables()
+
         self.cursor.execute(""" INSERT INTO dbo.smartphone ( marca, modelo,
-         data_entrada,descricao,cod_cliente,situacao,problema)
-               VALUES (?,?,getdate(),?,?,'Fazer Orçamento',?)""", (self.marca, self.modelo,
-                                                     self.descricao, self.codigo,self.problema))
+         data_entrada,cod_cliente,situacao,problema)
+               VALUES (?,?,getdate(),?,'Fazer Orçamento',?)""", (self.marca, self.modelo
+                                                , self.codigo,self.problema))
         self.cursor.commit()
         self.desconecta_bd()
-        self.select()
+
         self.preenche_novo_id()
-        messagebox.showinfo(title='Centec', message="aparelho adicionado")
+        self.tela_opcoes()
+
+
+
         self.limpa_tela()
 # da baixa no smartphone
     def dar_baixa(self):
@@ -208,64 +272,108 @@ class funcs():
 
         self.cursor.commit()
         self.desconecta_bd()
-        self.limpa_tela_inicial()
-#select da tela inicial
+
+
+
     def select(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
+        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
           INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
           order by id_cliente; """)
 
-        for (id, nome, telefone, id_smart,situacao,orcamento,observacao) in dados:
-            self.tabela.insert("", "end", values=(id, nome, telefone,id_smart, situacao,orcamento,observacao))
+        for (id, nome, telefone, id_smart,situacao,orcamento,descricao,observacao) in dados:
+            self.tabela.insert("", "end", values=(id, nome, telefone,id_smart, situacao,orcamento,descricao,observacao))
 
+        self.cursor.commit()
         self.desconecta_bd()
     def select_prontos(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
+        dados = self.cursor.execute(""" SELECT problema,NOME,modelo,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
                   INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                   where situacao = 'Pronto'
-                  order by id_cliente; """)
+                  order by id_smart DESC; """)
 
-        for (id, nome, telefone, id_smart, situacao, orcamento,observacao) in dados:
-            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,observacao))
+        for (problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao) in dados:
+            self.tabela.insert("", "end", values=(problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao))
+        self.cursor.commit()
         self.desconecta_bd()
     def select_orcamento(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
+        dados = self.cursor.execute(""" SELECT problema,NOME,modelo,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
                           INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                           where situacao = 'Fazer Orçamento'
-                          order by id_cliente; """)
+                          order by id_smart DESC; """)
 
-        for (id, nome, telefone, id_smart, situacao, orcamento,observacao) in dados:
-            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,observacao))
+        for (problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao) in dados:
+            self.tabela.insert("", "end", values=(problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao))
+        self.cursor.commit()
         self.desconecta_bd()
     def select_pedidos(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,telefone,id_smart,situacao,orcamento,observacao FROM clientes 
+        dados = self.cursor.execute(""" SELECT problema,NOME,modelo,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
                                   INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                                   where pedido = '1'
                                   order by id_cliente; """)
 
-        for (id, nome, telefone, id_smart, situacao, orcamento,observacao) in dados:
-            self.tabela.insert("", "end", values=(id, nome, telefone, id_smart, situacao, orcamento,observacao))
+        for (problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao) in dados:
+            self.tabela.insert("", "end", values=(problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao))
+        self.cursor.commit()
         self.desconecta_bd()
     def select_arrumar(self):
         self.tabela.delete(*self.tabela.get_children())
         self.conecta_BD()
-        dados = self.cursor.execute(""" SELECT id_cliente,NOME,modelo,id_smart,situacao,orcamento,observacao FROM clientes 
+        dados = self.cursor.execute(""" SELECT problema,NOME,modelo,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
                                           INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                                           where situacao = 'Orçamento feito' OR situacao = 'Pedido feito'
-                                          order by id_cliente; """)
+                                          order by id_smart DESC; """)
 
-        for (id, nome, modelo, id_smart, situacao, orcamento,observacao) in dados:
-            self.tabela.insert("", "end", values=(id, nome, modelo, id_smart, situacao, orcamento,observacao))
+        for (problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao) in dados:
+            self.tabela.insert("", "end", values=(problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao))
+        self.cursor.commit()
+        self.desconecta_bd()
+    def select_desistentes(self):
+        self.tabela.delete(*self.tabela.get_children())
+        self.conecta_BD()
+        dados = self.cursor.execute(""" SELECT problema,NOME,modelo,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
+                                          INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
+                                          where situacao = 'Desistiu'
+                                          order by id_smart DESC; """)
+
+        for (problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao) in dados:
+            self.tabela.insert("", "end", values=(problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao))
+        self.cursor.commit()
         self.desconecta_bd()
 
+    def select_voltou(self):
+        self.tabela.delete(*self.tabela.get_children())
+        self.conecta_BD()
+        dados = self.cursor.execute(""" SELECT problema,NOME,modelo,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
+                                          INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
+                                          where situacao = 'Voltou'
+                                          order by id_smart DESC; """)
+
+        for (problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao) in dados:
+            self.tabela.insert("", "end", values=(problema, nome, modelo, id_smart, situacao,descricao, orcamento,observacao))
+        self.cursor.commit()
+        self.desconecta_bd()
+
+    def select_devedores(self):
+
+        self.tabela.delete(*self.tabela.get_children())
+        self.conecta_BD()
+        dados = self.cursor.execute(""" SELECT problema,NOME,modelo,id_smart,situacao,orcamento,descricao,observacao FROM clientes 
+                                          INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
+                                          where situacao = 'Devendo'
+                                          order by id_smart DESC; """)
+
+        for (problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao) in dados:
+            self.tabela.insert("", "end", values=(problema, nome, modelo, id_smart, situacao, orcamento,descricao,observacao))
+        self.cursor.commit()
+        self.desconecta_bd()
 #select tela aparelhos
     def select_aparelhos(self):
         # select da tabela
@@ -277,7 +385,7 @@ class funcs():
 
         for (id, cod, marca, modelo, orcamento, data, descricao, status,observacao) in lista:
             self.tabela_aparelhos.insert("", "end", values=(id, cod, marca, modelo, orcamento, data, descricao, status,observacao))
-
+        self.cursor.commit()
         self.desconecta_bd()
 #select informaçoes
     def select_informaçoes(self):
@@ -302,15 +410,15 @@ class funcs():
             self.tabela_aparelhos2.insert("", "end", values=(
                 problema, orcamento, orcamento_sem,situacao, descricao,obs))
 #tabela3
-        lista3 = self.cursor.execute("""SELECT convert(char,data_entrada,3),convert(char,data_sai,3)
+        lista3 = self.cursor.execute("""SELECT convert(char,data_entrada,3),convert(char,data_mudanca_status,3),convert(char,data_sai,3)
                                                     AS Status FROM clientes 
                                                     INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
                                                     WHERE id_smart = """ + self.id)
-        for ( data_entrada,data_saida) in lista3:
+        for ( data_entrada,data_volta,data_saida) in lista3:
             self.tabela_aparelhos3.insert("", "end", values=(
-               data_entrada,data_saida))
+               data_entrada,data_volta,data_saida))
 
-
+        self.cursor.commit()
         self.desconecta_bd()
 #select da tela clientes
     def select_tela_consultar_clientes(self):
@@ -321,6 +429,7 @@ class funcs():
         ORDER BY nome ASC; """)
         for (id, nome, telefone, data) in lista:
             self.tabela_bd.insert("", "end", values=(id, nome, telefone, data))
+        self.cursor.commit()
         self.desconecta_bd()
 # preenche o id do cliente para adicionar aparelho
     def preenche(self):
@@ -340,6 +449,7 @@ class funcs():
                 id_maior = id_maior.replace(letra, '')
 
         self.entrada_id_cliente.insert(END, id_maior)
+        self.cursor.commit()
         self.desconecta_bd()
 # preenche novo id do smarthphone
     def preenche_novo_id (self):
@@ -355,9 +465,15 @@ class funcs():
         for letra in ex2:
             if letra in id_maior:
                 id_maior = id_maior.replace(letra, '')
-        #self.novo_id_smartphone.insert(END,id_maior)
+        self.cursor.commit()
         self.desconecta_bd()
-        messagebox.showinfo(title="ID do novo aparelho",message= id_maior)
+        self.limpa_tela_inicial()
+
+        self.entrada_id_smartphone.insert(END,id_maior)
+        messagebox.showinfo(title=id_maior, message="Aparelho Adicionado")
+
+
+        self.entrada_model.delete(0, END)
 # Deleta smart
     def delete_smart (self):
         self.id_delete = self.entrada_id_delete.get()
@@ -375,61 +491,99 @@ class funcs():
 # CAIXAS DE SELEÇÃO
     # checagem da marca escolhida nas caixas
     def chek_box_s (self):
-        self.escolha = self.escolha_marca.get()
-
-        if self.escolha == 1:
-            self.marca = 'Motorola'
-        if self.escolha == 2:
-            self.marca = 'Samsung'
-        if self.escolha == 3:
-            self.marca = 'Xiaomi'
-        if self.escolha == 4:
-            self.marca = 'Lg'
-        if self.escolha == 5:
-            self.marca = 'Asus'
-        if self.escolha == 6:
-            self.marca = 'Iphone'
-        elif self.escolha == 0 :
-            self.marca = 'Outros'
+        self.marca = self.marcas.get()
 # checagem do problema tela,bateria ou conector
     def chek_p (self):
-        self.escolha_p = self.escolha_problema.get()
 
-        if self.escolha_p == 1:
-            self.problema = 'Tela'
+        self.problema = self.entrada_descricao_1.get()
 
-        if self.escolha_p == 2:
-            self.problema = 'Conector'
+    def seleciona_modelo(self, marcas):
+        self.escolha = self.marcas.get()
 
-        if self.escolha_p == 3:
-            self.problema = 'Bateria'
+        if self.escolha== "Motorola G":
+            modelos=["Digitar",'G3','G4','G4 Play','G4 Plus', 'G5', 'G5 Plus', 'G5S', 'G5S Plus', 'G6', 'G6 Plus',
+                     'G6 Play', 'G7', 'G7 Plus', 'G7 Power', 'G7 Play', 'G8', 'G8 Plus', 'G8 Play', 'G8 Power', 'G9', 'G9 Play', 'G9 Plus', 'G9 Power', 'G10', 'G10 Power','G20', 'G30', 'G40 Fusion', 'G60', 'G100']
 
-        if self.escolha_p == 4:
-            self.problema = 'Desbloqueio'
+        if self.escolha == "Samsung S":
+            modelos = ["Digitar", "S6", "S6 Edge", "S6 Edge+", "S7", "S7 Edge", "S8", "S8+", "S9", "S9+",
+                       "S10", "S10+", "S10e", "S20", "S20+", "S20 Ultra", "S21", "S21+", "S21 Ultra"]
 
-        if self.escolha_p == 5:
-            self.problema = 'Botões'
+        if self.escolha == "Samsung A":
+            modelos = ["Digitar","A01","A01 CORE","A02","A03","A03 CORE","A10", "A20", "A30", "A40", "A50", "A60", "A70",
+                       "A02s","A03s","A10s", "A20s", "A30s", "A40s","A50s",
+                       "A11", "A21", "A31", "A41","A51", "A51 5G","A71", "A71 5G", "A21s", "A31s", "A51s", "A71s", "A02s",
+                       "A12", "A32", "A42 5G", "A52", "A72", "A82",
+                       "A22", "A52 5G", "A72 5G", "A22 5G", "A13", "A23", "A33", "A43", "A53", "A13s",
+                       "A23s", "A33s", "A53s",
+                       "A14"]
 
-        if self.escolha_p == 6:
-            self.problema = 'Outros'
+        if self.escolha == "Samsung J":
+            modelos = ["Digitar","J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J1 Ace", "J2 Prime", "J3 Pro", "J5 Prime",
+                       "J7 Prime","J7 Pro"]
+        if self.escolha == "Xiaomi":
+            modelos  = ["Digitar","Mi 11","Mi 11 Ultra","Mi 11 Lite","Mi 10","Mi 10 Pro","Mi 10T","Mi 10T Pro","Mi 10 Lite",
+                        "Redmi Note 10","Redmi Note 10 Pro","Redmi Note 10S","Redmi Note 9","Redmi Note 9 Pro","Redmi Note 9S",
+                        "Redmi 9","Redmi 9A","Redmi 9C","Poco X3","Poco X3 Pro","Poco F3","Mi A3","Mi 9","Mi 9T","Mi 9T Pro","Mi Mix 3","Mi Note 10","Mi Note 10 Pro"]
+        if self.escolha == "Iphone":
+            modelos  = ["Digitar","6","6 Plus","6S","6S Plus","SE","7","7 Plus","8","8 Plus","X","XS","XS Max","XR","11","11 Pro","11 Pro Max",
+                        "SE (2ª geração)","12 mini","12","12 Pro","12 Pro Max","13 mini","13","13 Pro","13 Pro Max"]
+        if self.escolha == "Lg":
+            modelos  = ["Digitar"]
+        if self.escolha == "Asus":
+            modelos  = ["Digitar"]
+        if self.escolha == "Blu":
+            modelos  = ["Digitar"]
+        if self.escolha == "Multilaser":
+            modelos  = ["Digitar"]
+        if self.escolha == "Nokia":
+            modelos  = ["Digitar"]
+        if self.escolha == "Sony":
+            modelos  = ["Digitar"]
+        if self.escolha == "Huawei":
+            modelos  = ["Digitar"]
+        if self.escolha == "Lenovo":
+            modelos  = ["Digitar"]
+        if self.escolha == "Alcatel":
+            modelos  = ["Digitar"]
+        if self.escolha == "ZTE":
+            modelos  = ["Digitar"]
+        if self.escolha == "Positivo":
+            modelos  = ["Digitar"]
 
-        elif self.escolha_p == 0 :
-              self.problema = 'Não Definido'
+        self.modelos = StringVar()
+        self.modelos.set("Modelo")
+        self.Menu_modelos = OptionMenu(self.frame_1, self.modelos, *modelos,command=self.outro_modelo)
+        self.Menu_modelos.place(relx=0.28, rely=0.4, relwidth=0.12, relheight=0.1)
 
-    def chek_muda_status(self):
-        self.muda_status =  self.status.get()
-        if self.muda_status == 1:
-            self.pronto()
-        if self.muda_status == 2:
-            self.dar_baixa()
-        if self.muda_status == 3:
-            self.tela_observacoes()
-        if self.muda_status == 4:
-            self.pedido_feito()
-        if self.muda_status == 5:
-            self.fazer_pedido()
-        else :
-            print(self.muda_status)
+
+    def outro_modelo(self, escolha):
+        self.escolha_modelo = self.modelos.get()
+
+        if self.escolha_modelo == "Digitar":
+
+            self.entrada_model = Entry(self.frame_1)
+            self.entrada_model.place(relx=0.41, rely=0.399, relwidth=0.10, relheight=0.10)
+            self.modelos = self.entrada_model
+
+
+    def concatena_problemas(self,problema):
+        ok = self.outros_problemas.get()
+        self.entrada_descricao_1.insert(END,ok)
+        self.entrada_descricao_1.get()
+
+    def passa_orcamento_tela_duploclik(self):
+
+        self.orcament = self.entrada_cgarantia.get()
+        self.orcamento_sem = self.entrada_sgarantia.get()
+        self.conecta_BD()
+        self.id = self.entrada_id_smartphone.get()
+        self.cursor.execute("""UPDATE smartphone SET orcamento = """ + self.orcament +
+                            """,orcamento_sem = """ + self.orcamento_sem +
+                            """,situacao = 'Orçamento feito'"""
+                            """ WHERE id_smart = """ + self.id)
+        self.cursor.commit()
+        self.desconecta_bd()
+
 
     def chek_fazer_pedido(self):
         self.pedido = self.pedir.get()
@@ -471,7 +625,7 @@ class funcs():
                                        WHERE id_smart =""" + self.id)
         self.cursor.commit()
         self.desconecta_bd()
-        self.limpa_tela_inicial()
+
 
     def pedido_feito(self):
 
@@ -481,7 +635,7 @@ class funcs():
                                 WHERE id_smart =""" + self.id)
         self.cursor.commit()
         self.desconecta_bd()
-        self.limpa_tela_inicial()
+
 
 
 
@@ -495,6 +649,29 @@ class funcs():
         self.cursor.commit()
         self.desconecta_bd()
         self.limpa_tela_observacao()
+        self.atualiza_obs()
+    def add_observacao_divida(self):
+
+        self.id_smart = self.entrada_id_smartphone.get()
+        self.observacao = self.entrada_observacao_divida.get()
+        self.conecta_BD()
+        self.cursor.execute(""" UPDATE dbo.smartphone SET  descricao = ?
+                                                     WHERE id_smart = """ + self.id_smart,(self.observacao))
+        self.cursor.commit()
+        self.desconecta_bd()
+        self.limpa_tela_observacao_divida()
+        self.atualiza_obs()
+    def pago(self):
+
+        self.id_smart = self.entrada_id_smartphone.get()
+        self.observacao = "Pago"
+        self.conecta_BD()
+        self.cursor.execute(""" UPDATE dbo.smartphone SET  descricao = ?
+                                                     WHERE id_smart = """ + self.id_smart,(self.observacao))
+        self.cursor.commit()
+        self.desconecta_bd()
+
+        self.atualiza_obs()
 
 # funçao que muda o status do aparelho para pronto
     def pronto (self):
@@ -506,9 +683,50 @@ class funcs():
                 WHERE id_smart = """ + self.id_smart)
         self.cursor.commit()
         self.desconecta_bd()
-        self.limpa_tela_inicial()
 
-# orçamento
+
+
+    def desistiu(self):
+        self.id_smart = self.entrada_id_smartphone.get()
+        self.situacao = self.status.get()
+        self.conecta_BD()
+
+        self.cursor.execute(""" UPDATE smartphone SET data_mudanca_status = GETDATE(), situacao = 'Desistiu'
+                 WHERE id_smart = """ + self.id_smart)
+        self.cursor.commit()
+        self.desconecta_bd()
+
+
+    def voltou(self):
+        self.id_smart = self.entrada_id_smartphone.get()
+        self.situacao = self.status.get()
+        self.conecta_BD()
+
+        self.cursor.execute(""" UPDATE smartphone SET data_mudanca_status = GETDATE(),
+                                                        situacao = 'Voltou'
+                                                        WHERE id_smart = """ + self.id_smart)
+
+
+        self.cursor.commit()
+        self.desconecta_bd()
+
+    def devedores(self):
+        self.id_smart = self.entrada_id_smartphone.get()
+        self.situacao = self.status.get()
+        self.conecta_BD()
+
+        self.cursor.execute(""" UPDATE smartphone SET data_mudanca_status = GETDATE(),
+                                                        situacao = 'Devendo'
+                                                        WHERE id_smart = """ + self.id_smart)
+
+
+        self.cursor.commit()
+        self.desconecta_bd()
+
+
+
+
+    # orçamento
 #funçao que atualiza o orçamento
     def passar_orcamento(self):
 
@@ -520,11 +738,14 @@ class funcs():
                  WHERE id_smart = """ + self.id)
         for (id, cod, marca, modelo,problema, orcamento,orcamento_sem, data, descricao, status) in lista:
             self.tabela_aparelhos.insert("", "end", values=(id, cod, marca, modelo,problema, orcamento,orcamento_sem, data, descricao, status))
+
+
+        self.cursor.commit()
         self.desconecta_bd()
 # funçao que caucula e preeenche o orçamento
     def faz_orcamento(self):
         self.valor = self.entrada_valor_peca.get()
-        self.valor = int(self.valor)
+        self.valor = float(self.valor)
         self.valorcom = self.valor * 2 + 40
         self.valors = self.valorcom  * (15 / 100)
         self.valorsem = self.valorcom - self.valors
@@ -590,6 +811,7 @@ class funcs():
                 ORDER BY nome ASC; """)
         for (id, nome, telefone,data) in lista:
             self.tabela_fornecedor.insert("", "end", values=(id, nome, telefone,data))
+
         self.desconecta_bd()
 # adiciona o fornecedor no banco de dados
     def adiciona_fornecedor(self):
@@ -615,6 +837,7 @@ class funcs():
         telefone_fornecedor= self.cursor.fetchall()
         telefone_fornecedor = [list(rows)for rows in telefone_fornecedor]
         self.entrada_telefone_fornecedor.insert(END,telefone_fornecedor)
+        self.cursor.commit()
         self.desconecta_bd()
 
         self.bot_ok = atk.Button3d(self.frame_telas, text="OK", command=self.edita_fornecedor,
@@ -718,6 +941,9 @@ class funcs():
         self.tabela_telas.column("#7", width=300, minwidth=50, stretch=NO)
         self.tabela_telas.place(relx=0.01, rely=0.04, relwidth=0.98, relheight=0.86)
 
+# chama o duploclique
+        self.tabela_telas.bind("<Double-1>",self.duplo_telas)
+
     def select_todas_marcas(self):
         # select da tabela
         self.select_tabela_telas()
@@ -729,6 +955,7 @@ class funcs():
 
         for (id, marca, modelo, condicoes,nome,valor,descricao) in lista:
             self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes,nome,valor,descricao))
+        self.cursor.commit()
         self.desconecta_bd()
 
 
@@ -764,7 +991,66 @@ class funcs():
 
             for (id, marca, modelo, condicoes, nome, valor, descricao) in lista:
                 self.tabela_telas.insert("", "end", values=(id, marca, modelo, condicoes, nome, valor, descricao))
+            self.cursor.commit()
             self.desconecta_bd()
+
+
+# FUNÇOES DA TELA OPÇOES
+
+    def pronto_2(self):
+        self.pronto()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.select_informaçoes()
+        self.select_arrumar()
+    def dar_baixa_2(self):
+        self.dar_baixa()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.tabela_aparelhos3.delete(*self.tabela_aparelhos3.get_children())
+        self.select_prontos()
+        self.select_informaçoes()
+    def desistiu_2(self):
+        self.desistiu()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.select_informaçoes()
+    def voltou_2(self):
+        self.voltou()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.tabela_aparelhos3.delete(*self.tabela_aparelhos3.get_children())
+        self.select_informaçoes()
+    def devedores_2(self):
+        self.devedores()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.tabela_aparelhos3.delete(*self.tabela_aparelhos3.get_children())
+        self.select_informaçoes()
+        self.tela_obs_devedor()
+    def pago_2(self):
+        self.pago()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.tabela_aparelhos3.delete(*self.tabela_aparelhos3.get_children())
+        self.select_informaçoes()
+
+    def fazer_pedido_2(self):
+        self.fazer_pedido()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.select_informaçoes()
+        self.select_pedidos()
+    def pedido_feito_2(self):
+        self.pedido_feito()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.select_informaçoes()
+        self.select_pedidos()
+    def atualiza_obs(self):
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.select_informaçoes()
+    def atualiza_orcamento(self):
+        self.passa_orcamento_tela_duploclik()
+        self.tabela_aparelhos2.delete(*self.tabela_aparelhos2.get_children())
+        self.select_informaçoes()
+        self.select_orcamento()
+        self.limpa_tela_ops()
+
+
+
 
 
 

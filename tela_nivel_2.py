@@ -19,27 +19,41 @@ class nivel_2():
         self.frame_consultar.place(relx=0.01, rely=0.02, relwidth=0.98, relheight=0.25)
 
         self.frame_consultar2 = Frame(consultar,bd=2, bg="#006670", highlightbackground="#006670", highlightthickness=4)
-        self.frame_consultar2.place(relx=0.01, rely=0.12, relwidth=0.98, relheight=0.6)
+        self.frame_consultar2.place(relx=0.01, rely=0.01, relwidth=0.98, relheight=0.8)
 
         self.frame_editar = Frame(consultar, bd=2, bg="#006670", highlightbackground="#006670", highlightthickness=4)
         self.frame_editar.place(relx=0.01, rely=0.75, relwidth=0.98, relheight=0.25)
 
 # botoes da tela 3
 
-        self.bot_dell = atk.Button3d(self.frame_consultar, bg="#006680", text="Editar Clientes",
-                                     command=self.botoes_editar_cliente)
-        self.bot_dell.place(relx=0.15, rely=0.01, relwidth=0.15, relheight=0.35)
-        self.id_edita = Entry(self.frame_consultar)
-        self.id_edita.place(relx=0.01, rely=0.05, relwidth=0.1, relheight=0.2)
+
 
         self.bot_voltar = atk.Button3d(self.frame_editar, bg="#006680", text="Voltar",
                                      command=consultar.destroy)
         self.bot_voltar.place(relx=0.85, rely=0.64, relwidth=0.15, relheight=0.35)
 
+        self.bot_salvar = atk.Button3d(self.frame_editar, bg="#1EAAF1", text="SALVAR",
+                                       command=self.edita_cliente)
+        self.bot_salvar.place(relx=0.55, rely=0.0, relwidth=0.20, relheight=0.35)
+        # botao excluir
+        self.bot_excluir = atk.Button3d(self.frame_editar, text="Excluir Cliente",
+                                        command=self.delete_cliente)
+        self.bot_excluir.place(relx=0.01, rely=0.55, relwidth=0.20, relheight=0.35)
+        # entry mostra id
+        self.mostra_id = Entry(self.frame_editar)
+        self.mostra_id.place(relx=0.01, rely=0.07, relwidth=0.08, relheight=0.2)
+        # entry edita nome
+        self.entrada_edita_nome = Entry(self.frame_editar)
+        self.entrada_edita_nome.place(relx=0.1, rely=0.07, relwidth=0.20, relheight=0.2)
+        # entry edita telefone
+        self.entrada_edita_telefone = Entry(self.frame_editar)
+        self.entrada_edita_telefone.place(relx=0.31, rely=0.07, relwidth=0.2, relheight=0.2)
 
 
 
-# tabela do banco de dados da tela
+
+
+        # tabela do banco de dados da tela
         self.tabela_bd = ttk.Treeview(self.frame_consultar2, height=4,
                                       columns=("coluna0", "coluna1", "coluna2", "coluna3", "coluna4"))
         self.tabela_bd.heading("#1", text="id")
@@ -54,6 +68,8 @@ class nivel_2():
         self.tabela_bd.place(relx=0.01, rely=0.01, relwidth=0.98, relheight=0.98)
 
         self.select_tela_consultar_clientes()
+
+        self.tabela_bd.bind("<Double-1>", self.duplo_tela_clientes)
 
     def tela_garantia(self):
         tela4 = Toplevel()
@@ -83,7 +99,7 @@ class nivel_2():
         self.tabela_garantia.heading("#4", text="modelo")
         self.tabela_garantia.heading("#5", text="id_smart")
         self.tabela_garantia.heading("#6", text="data de saida")
-        self.tabela_garantia.heading("#7", text="Descrição")
+        self.tabela_garantia.heading("#7", text="Divida")
         self.tabela_garantia.heading("#8", text="Observação")
         self.tabela_garantia.column("#0", width=00, minwidth=50, stretch=NO)
         self.tabela_garantia.column("#1", width=150, minwidth=50, stretch=NO)
@@ -102,7 +118,7 @@ class nivel_2():
         lista = self.cursor.execute(""" SELECT NOME,telefone,Marca,modelo,id_smart,convert(char,data_sai,3),descricao,observacao FROM clientes 
         INNER JOIN smartphone ON id_cliente = smartphone.cod_cliente
         where data_sai >= dateadd(MONTH, -3, getdate())
-        ORDER BY id_smart ASC; """)
+        ORDER BY data_sai ASC; """)
 
         for (nome, telefone, marca, modelo, id_smart, data, descricao,observacao) in lista:
             self.tabela_garantia.insert("", "end", values=(nome, telefone, marca, modelo, id_smart, data, descricao,observacao))
@@ -192,8 +208,8 @@ class nivel_2():
         self.bot_ok = atk.Button3d(orcamento, text="OK", command=self.faz_orcamento, bg="#006675")
         self.bot_ok.place(relx=0.37, rely=0.49, relwidth=0.05, relheight=0.12)
 
-        self.bot_ok = atk.Button3d(orcamento, text="Voltar", command=orcamento.destroy, bg="#006675")
-        self.bot_ok.place(relx=0.86, rely=0.80, relwidth=0.1, relheight=0.15)
+        self.bot_voltar = atk.Button3d(orcamento, text="Voltar", command=orcamento.destroy, bg="#006675")
+        self.bot_voltar.place(relx=0.86, rely=0.80, relwidth=0.1, relheight=0.15)
 
 # chek box
         self.pedir = IntVar()
@@ -497,4 +513,190 @@ class nivel_2():
         self.bot_ok = atk.Button3d(self.frame_obs, bg="#1EAAF1", text="OK",
                                      command=self.add_observacao)
         self.bot_ok.place(relx=0.85, rely=0.40, relwidth=0.15, relheight=0.55)
+
+    def tela_obs_devedor(self):
+        obs = Toplevel()
+        obs.title("CenTEC")
+        obs.config(background="#006669")
+        obs.geometry("400x100")
+        obs.resizable(True, True)
+        obs.grab_set()
+
+        self.frame_obs = Frame(obs, bd=2, bg="#006675", highlightbackground="#006675",
+                                     highlightthickness=4)
+        self.frame_obs.place(relx=0.02, rely=0.1, relwidth=0.96, relheight=0.8)
+
+
+        self.lb_descricao = Label(self.frame_obs, text="DIGITE  O VALOR DA DÍVIDA", fg="white", bg="#006675",
+                                  font=("candara", "10", "bold italic"))
+        self.lb_descricao.place(relx=0.32, rely=0.02, relwidth=0.50, relheight=0.20)
+
+        self.entrada_observacao_divida = Entry(self.frame_obs)
+        self.entrada_observacao_divida.place(relx=0.01, rely=0.40, relwidth=0.82, relheight=0.50)
+
+        self.bot_ok = atk.Button3d(self.frame_obs, bg="#1EAAF1", text="OK",
+                                     command=self.add_observacao_divida)
+        self.bot_ok.place(relx=0.85, rely=0.40, relwidth=0.15, relheight=0.55)
+
+    def tela_opcoes(self):
+        opcoes = Toplevel()
+        opcoes.title("CenTEC")
+        opcoes.config(background="#006669")
+        opcoes.geometry("1000x400")
+        opcoes.resizable(True, True)
+        opcoes.grab_set()
+
+
+
+        #self.lb_descricao = Label(opcoes, text="INFORMAÇOES DO SMARTPHONE", fg="white", bg="#006669",
+                                  #font=("candara", "20", "bold italic"))
+        #self.lb_descricao.place(relx=0.3, rely=0.01, relwidth=0.50, relheight=0.10)
+
+        # frame da tela
+
+        self.frame_ops = Frame(opcoes, bd=2, bg="#006675", highlightbackground="#006675",
+                                     highlightthickness=4)
+        self.frame_ops.place(relx=0.01, rely=0.1, relwidth=0.98, relheight=0.50)
+
+
+        self.frame_botoes = Frame(opcoes, bd=2, bg="#006675", highlightbackground="#006675",
+                                     highlightthickness=4)
+        self.frame_botoes.place (relx=0.01, rely=0.6, relwidth=0.98, relheight=0.38)
+
+
+        self.tabela_aparelhos = ttk.Treeview(self.frame_ops, height=14,
+                                             columns=("coluna0", "coluna1", "coluna2", "coluna3", "colun4", "coluna5",
+                                                      "coluna6"))
+        self.tabela_aparelhos.heading("#1", text="id_cliente")
+        self.tabela_aparelhos.heading("#2", text="Nome")
+        self.tabela_aparelhos.heading("#3", text="Telefone")
+        self.tabela_aparelhos.heading("#4", text="Marca")
+        self.tabela_aparelhos.heading("#5", text="Modelo")
+        self.tabela_aparelhos.heading("#6", text="ID_Smart")
+
+
+        self.tabela_aparelhos.column("#0", width=0, minwidth=100, stretch=NO)
+        self.tabela_aparelhos.column("#1", width=70, minwidth=100, stretch=NO)
+        self.tabela_aparelhos.column("#2", width=200, minwidth=100, stretch=NO)
+        self.tabela_aparelhos.column("#3", width=150, minwidth=100, stretch=NO)
+        self.tabela_aparelhos.column("#4", width=150, minwidth=100, stretch=NO)
+        self.tabela_aparelhos.column("#5", width=140, minwidth=100, stretch=NO)
+        self.tabela_aparelhos.column("#6", width=100, minwidth=100, stretch=NO)
+
+        self.tabela_aparelhos.place(relx=0.01, rely=0.01, relwidth=0.98, relheight=0.30)
+
+
+        self.tabela_aparelhos2 = ttk.Treeview(self.frame_ops, height=14,
+                                             columns=("coluna0", "coluna1", "coluna2", "coluna3", "colun4", "coluna5",
+                                                      "coluna6"))
+        self.tabela_aparelhos2.heading("#0", text="")
+        self.tabela_aparelhos2.heading("#1", text="Problemas")
+        self.tabela_aparelhos2.heading("#2", text="Com Garantia")
+        self.tabela_aparelhos2.heading("#3", text="Sem Garantia")
+        self.tabela_aparelhos2.heading("#4", text="Status")
+        self.tabela_aparelhos2.heading("#5", text="Dívida")
+        self.tabela_aparelhos2.heading("#6", text="Observações")
+
+
+        self.tabela_aparelhos2.column("#0", width=0, minwidth=100, stretch=NO)
+        self.tabela_aparelhos2.column("#1", width=120, minwidth=100, stretch=NO)
+        self.tabela_aparelhos2.column("#2", width=90, minwidth=100, stretch=NO)
+        self.tabela_aparelhos2.column("#3", width=90, minwidth=100, stretch=NO)
+        self.tabela_aparelhos2.column("#4", width=100, minwidth=100, stretch=NO)
+        self.tabela_aparelhos2.column("#5", width=170, minwidth=100, stretch=NO)
+        self.tabela_aparelhos2.column("#6", width=400, minwidth=100, stretch=NO)
+
+        self.tabela_aparelhos2.place(relx=0.01, rely=0.35, relwidth=0.98, relheight=0.30)
+
+
+        self.tabela_aparelhos3 = ttk.Treeview(self.frame_ops, height=14,
+                                              columns=("coluna0", "coluna1", "coluna2","coluna3"))
+        self.tabela_aparelhos3.heading("#0", text="")
+        self.tabela_aparelhos3.heading("#1", text="Data de Entrada")
+        self.tabela_aparelhos3.heading("#2", text="Data de Atualização")
+        self.tabela_aparelhos3.heading("#3", text="Data de Saída")
+
+        self.tabela_aparelhos3.column("#0", width=0, minwidth=100, stretch=NO)
+        self.tabela_aparelhos3.column("#1", width=130, minwidth=100, stretch=NO)
+        self.tabela_aparelhos3.column("#2", width=130, minwidth=100, stretch=NO)
+        self.tabela_aparelhos3.column("#3", width=130, minwidth=100, stretch=NO)
+
+        self.tabela_aparelhos3.place(relx=0.30, rely=0.7, relwidth=0.40, relheight=0.30)
+
+
+        self.select_informaçoes()
+
+
+
+        # botoes
+        self.status = IntVar()
+
+        self.bot_voltar = atk.Button3d(self.frame_ops, text="Voltar", command=opcoes.destroy, bg="#006675")
+        self.bot_voltar.place(relx=0.9, rely=0.80, relwidth=0.1, relheight=0.2)
+
+        self.bot_pedir = atk.Button3d(self.frame_ops, bg="#006698", text="Pedir Peça", command=self.fazer_pedido_2)
+        self.bot_pedir.place(relx=0.0, rely=0.8, relwidth=0.1, relheight=0.2)
+
+        self.bot_pedido_feito = atk.Button3d(self.frame_ops, bg="#006698", text="Pedido Feito", command=self.pedido_feito_2)
+        self.bot_pedido_feito.place(relx=0.15, rely=0.8, relwidth=0.1, relheight=0.2)
+
+        self.bot_obs = atk.Button3d(self.frame_ops, bg="#006698", text="Observação", command=self.tela_observacoes)
+        self.bot_obs.place(relx=0.75, rely=0.80, relwidth=0.1, relheight=0.2)
+
+
+        self.bot_pago = atk.Button3d(self.frame_botoes, bg="#006698", text="Pago", command=self.pago_2)
+        self.bot_pago.place(relx=0.2, rely=0.1, relwidth=0.1, relheight=0.3)
+
+        self.bot_pronto = atk.Button3d(self.frame_botoes, bg="#006698", text="Pronto", command=self.pronto_2)
+        self.bot_pronto.place(relx=0.32, rely=0.1, relwidth=0.1, relheight=0.3)
+
+        self.bot_entregue = atk.Button3d(self.frame_botoes, bg="#004698", text="Entregue", command=self.dar_baixa_2)
+        self.bot_entregue.place(relx=0.45, rely=0.1, relwidth=0.1, relheight=0.3)
+
+        self.bot_desistiu = atk.Button3d(self.frame_botoes, bg="#006698", text="Desistiu", command=self.desistiu_2)
+        self.bot_desistiu.place(relx=0.58, rely=0.1, relwidth=0.1, relheight=0.3)
+
+        self.bot_devendo = atk.Button3d(self.frame_botoes, bg="#005598", text="Devendo", command=self.devedores_2)
+        self.bot_devendo.place(relx=0.7, rely=0.1, relwidth=0.1, relheight=0.3)
+
+        self.bot_desistiu = atk.Button3d(self.frame_botoes, bg="#006698", text="Voltou", command=self.voltou_2)
+        self.bot_desistiu.place(relx=0.83, rely=0.1, relwidth=0.1, relheight=0.3)
+
+
+
+        self.bot_ok = atk.Button3d(self.frame_botoes, text="OK", command=self.faz_orcamento, bg="#006675")
+        self.bot_ok.place(relx=0.32, rely=0.642, relwidth=0.05, relheight=0.25)
+
+        self.bot_atualiza = atk.Button3d(self.frame_botoes, text="Atualizar Orçamento", command=self.atualiza_orcamento,
+                                         bg="#006675")
+        self.bot_atualiza.place(relx=0.84, rely=0.63, relwidth=0.15, relheight=0.3)
+
+
+        self.lb_valor_peca = Label(self.frame_botoes, text="Valor da Peça", fg="white", bg="#006678",
+                                   font=("candara", "20", "bold italic"))
+        self.lb_valor_peca.place(relx=0.0, rely=0.59, relwidth=0.18, relheight=0.3)
+
+        self.entrada_valor_peca = Entry(self.frame_botoes)
+        self.entrada_valor_peca.place(relx=0.20, rely=0.65, relwidth=0.1, relheight=0.2)
+
+        # orçamento com garantia
+        self.lb_cgarantia = Label(self.frame_botoes, text="Com Garantia", fg="white", bg="#006678",
+                                  font=("candara", "20", "bold italic"))
+        self.lb_cgarantia.place(relx=0.4, rely=0.54, relwidth=0.18, relheight=0.22)
+        self.entrada_cgarantia = Entry(self.frame_botoes)
+        self.entrada_cgarantia.place(relx=0.62, rely=0.54, relwidth=0.1, relheight=0.2)
+        # sem garantia
+        self.lb_sgarantia = Label(self.frame_botoes, text="Sem Garantia", fg="white", bg="#006678",
+                                  font=("candara", "20", "bold italic"))
+        self.lb_sgarantia.place(relx=0.4, rely=0.8, relwidth=0.18, relheight=0.2)
+        self.entrada_sgarantia = Entry(self.frame_botoes)
+        self.entrada_sgarantia.place(relx=0.62, rely=0.8, relwidth=0.1, relheight=0.2)
+
+
+
+
+
+
+
+
 
